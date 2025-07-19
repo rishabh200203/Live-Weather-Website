@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>5-Day Weather App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #74ebd5, #ACB6E5);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px white;
+      max-width: 600px;
+      margin: auto;
+      text-align: center;
+    }
+
+    input {
+      padding: 10px;
+      width: 70%;
+      border: 1px solid white;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px 15px;
+      background: #74ebd5;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    .weather-info {
+      margin-top: 20px;
+    }
+
+    .forecast-day {
+      background: #f1f1f1;
+      border-radius: 10px;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    img {
+      width: 50px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Weather Forecast</h1>
+    <input type="text" id="cityInput" placeholder="Enter city name">
+    <div>
+      <button onclick="getWeatherByCity()">Search</button>
+      <button onclick="getWeatherByLocation()">Use My Location</button>
+    </div>
+    <div class="weather-info" id="weatherResult"></div>
+  </div>
+
+  <script>
+    const apiKey = "9917650a76424822b7970233251907";
+
+    async function fetchWeather(query) {
+      const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(query)}&days=5&aqi=no&alerts=no`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.error) {
+          throw new Error(data.error.message);
+        }
+
+        displayWeather(data);
+      } catch (error) {
+        document.getElementById("weatherResult").innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+      }
+    }
+
+    function displayWeather(data) {
+      const current = data.current;
+      const location = data.location;
+      const forecast = data.forecast.forecastday;
+
+      let output = `
+        <h2>${location.name}, ${location.country}</h2>
+        <p><strong>Current:</strong> ${current.temp_c}°C, ${current.condition.text}</p>
+        <img src="https:${current.condition.icon}" alt="Current">
+        <h3>5-Day Forecast</h3>
+      `;
+
+      forecast.forEach(day => {
+        output += `
+          <div class="forecast-day">
+            <h4>${day.date}</h4>
+            <img src="https:${day.day.condition.icon}" alt="icon">
+            <p><strong>${day.day.condition.text}</strong></p>
+            <p>Max: ${day.day.maxtemp_c}°C | Min: ${day.day.mintemp_c}°C</p>
+            <p>Humidity: ${day.day.avghumidity}%</p>
+          </div>
+        `;
+      });
+
+      document.getElementById("weatherResult").innerHTML = output;
+    }
+
+    function getWeatherByCity() {
+      const city = document.getElementById("cityInput").value.trim();
+      if (city !== "") {
+        fetchWeather(city);
+      } else {
+        alert("Please enter a city name.");
+      }
+    }
+
+    function getWeatherByLocation() {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            fetchWeather(`${latitude},${longitude}`);
+          },
+          (error) => {
+            alert("Location access denied or unavailable.");
+          }
+        );
+      } else {
+        alert("Geolocation is not supported by your browser.");
+      }
+    }
+  </script>
+</body>
+</html>
